@@ -17,6 +17,7 @@ char *filename = "combinations.txt";
 int main()
 {
 	printf("\nGenerating combinations.\n");
+	//create all possible hashes
 	generate();
 	printf("Done!\n");
 	printf("Enter hash key: ");
@@ -34,34 +35,28 @@ void searchHash(char *fname, char *hash){
 	int find_result = 0;
 	char *lineOut[12];
 
-
+	//open file
 	if((fp = fopen(fname, "r")) == NULL) {
 		exit(1);
 	}
 
+	//find
 	while(fgets(temp, 512, fp) != NULL) {
 		if((strstr(temp, hash)) != NULL) {
-		//if((strcmp(temp, hash)) == 0) {
 			printf("The corresponding password is on line: %d", line_num);
 			printf("\n%s\n", temp);
 			if(strcmp(temp, hash) == 0){
 				break;
 			}
 
-
-			//strncpy(lineOut, line_num, 4);
 			find_result++;
-			//break;
+	
 		}
 		line_num++;
 	}
 
-	//printf("A match found on line: %d\n", line_num);
-	//printf("\n%s\n", temp);
-
-	if(fp) {
-		fclose(fp);
-	}
+	//close file
+	if(fp) fclose(fp);
 
 }
 
@@ -120,6 +115,10 @@ char *hash_process(char *password)
 	return hash;
 }
 
+/********************* E function *************************/
+// DES replacement cipher
+// The function E takes 4 bytes from *in as input and
+// writes 4 bytes to *out
 void E(char *in, char *out)
 {
     out[0]=(in[0]&0x80)^(((in[0]>>1)&0x7F)^((in[0])&0x7F));
