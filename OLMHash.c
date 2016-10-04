@@ -106,6 +106,9 @@ int main()
 
     if (existing_user == 0)
     {
+
+
+
         //user doesn't exist - add username and password
         printf("\nNot existing user\n\n");
         printf("Enter your new password:\n");
@@ -115,7 +118,27 @@ int main()
         strcpy(new_line, user_ID);
         strcat(new_line, " ");
         strcat(new_line, user_pass);
+
+
+
+        //padding
+        int j;
+        int buffer = 0;
+        buffer = 12 - strlen(user_pass);   
+   		
+        for(j = 0; j < buffer; j++)
+        {
+        	strcat(new_line, "0");
+ 
+        }
+
         strcat(new_line, "\n");
+
+        //hash
+        char token1[4];
+        char token2[4];
+        char token3[4];
+
 
         //add line to file
         fputs(new_line, temp);
