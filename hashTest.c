@@ -1,0 +1,124 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+void pass_hash(char *in, char *out);
+void E(char *in, char *out);
+void chopN(char *str, size_t n);
+
+int main()
+{
+
+    char pass[100];
+    char hpass[12];
+
+    printf("Enter your pass:\n");
+    fgets (pass, 100, stdin);
+    pass[strlen(pass) - 1] = '\0';
+        //printf ("You entered: %s\n", pass);
+
+
+    pass_hash(pass, hpass);
+    printf("\n%s\n", hpass);
+
+    return 0;
+}
+
+//hash funbction
+void pass_hash(char *in, char *out)
+{
+
+    //adjust to upper case
+    int i;
+    for(i = 0; in[i]; i++)
+    {
+        in[i] = toupper(in[i]);
+    }
+    printf("%s\n", in);
+
+    //printf("%i\n", strlen(in));
+ 
+    //adjust length - cut or add \0
+    if (strlen(in) > 12)
+    {
+        printf("Password greater than 12\n");
+
+        strncpy(out, in, 12);
+        printf("%s\n", out);
+    }
+
+
+    if (strlen(in) < 12)
+    {
+        printf("Password less than 12\n");
+
+        int j;
+        //char empty[12];
+        for (j = strlen(in); j < 12; j++)
+        {
+            in[j] = '@';
+            //strcat(empty, "@");
+            //printf("%s\n", empty);
+        }
+        //strcat(in, empty);
+        out = in;
+        printf("%s\n", out);
+    }
+
+    //encryption
+    char sub1[3];
+    char sub1_hash[32];
+    char sub2[3];
+    char sub2_hash[32];
+    char sub3[3];
+    char sub3_hash[32];
+
+    //split into three substrings
+    memcpy(sub1, in, 4);
+    chopN(in, 4);
+    printf("%s\n", sub1);
+    memcpy(sub2, in, 4);
+    chopN(in, 4);
+    printf("%s\n", sub2);
+    memcpy(sub3, in, 4);
+    printf("%s\n", sub3);
+    
+     //use E function
+    E(sub1, sub1_hash);
+    printf("%s\n", sub1_hash);
+    E(sub2, sub2_hash);
+    printf("%s\n", sub2_hash);
+    E(sub3, sub3_hash);
+    printf("%s\n", sub3_hash);
+
+    //concatenate strings
+    strcpy(out, sub1_hash);
+    strcat(out, sub2_hash);
+    strcat(out, sub3_hash);
+
+}
+
+
+/********************* E function *************************/
+// DES replacement cipher
+// The function E takes 4 bytes from *in as input and
+// writes 4 bytes to *out
+void E(char *in, char *out)
+{
+    out[0]=(in[0]&0x80)^(((in[0]>>1)&0x7F)^((in[0])&0x7F));
+    out[1]=((in[1]&0x80)^((in[0]<<7)&0x80))^(((in[1]>>1)&0x7F)^((in[1])&0x7F));
+    out[2]=((in[2]&0x80)^((in[1]<<7)&0x80))^(((in[2]>>1)&0x7F)^((in[2])&0x7F));
+    out[3]=((in[3]&0x80)^((in[2]<<7)&0x80))^(((in[3]>>1)&0x7F)^((in[3])&0x7F));
+}
+
+void chopN(char *str, size_t n)
+{
+    size_t len = strlen(str);
+    if (n > len)
+        return;  // Or: n = len;
+    memmove(str, str+n, len - n + 1);
+}
+
+
+
