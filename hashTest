@@ -14,8 +14,9 @@ int main()
     char hpass[12];
 
     printf("Enter your pass:\n");
-    scanf ("%s", pass);
-    //printf ("You entered: %s\n", pass);
+    fgets (pass, 100, stdin);
+    pass[strlen(pass) - 1] = '\0';
+        //printf ("You entered: %s\n", pass);
 
 
     pass_hash(pass, hpass);
@@ -37,9 +38,7 @@ void pass_hash(char *in, char *out)
     printf("%s\n", in);
 
     //printf("%i\n", strlen(in));
-
-
-
+ 
     //adjust length - cut or add \0
     if (strlen(in) > 12)
     {
@@ -49,23 +48,23 @@ void pass_hash(char *in, char *out)
         printf("%s\n", out);
     }
 
-    /*
+
     if (strlen(in) < 12)
     {
         printf("Password less than 12\n");
 
         int j;
-        char empty[12];
-        for (j = 0; j < 12-strlen(in); j++)
+        //char empty[12];
+        for (j = strlen(in); j < 12; j++)
         {
-            strcat(empty, "\0");
+            in[j] = '@';
+            //strcat(empty, "@");
             //printf("%s\n", empty);
         }
-        strcat(in, empty);
-        out = empty;
+        //strcat(in, empty);
+        out = in;
         printf("%s\n", out);
     }
-    */
 
     //encryption
     char sub1[3];
@@ -76,16 +75,16 @@ void pass_hash(char *in, char *out)
     char sub3_hash[32];
 
     //split into three substrings
-    strncpy(sub1, in, 4);
+    memcpy(sub1, in, 4);
     chopN(in, 4);
     printf("%s\n", sub1);
-    strncpy(sub2, in, 4);
+    memcpy(sub2, in, 4);
     chopN(in, 4);
     printf("%s\n", sub2);
-    strncpy(sub3, in, 4);
+    memcpy(sub3, in, 4);
     printf("%s\n", sub3);
-
-    //use E function
+    
+     //use E function
     E(sub1, sub1_hash);
     printf("%s\n", sub1_hash);
     E(sub2, sub2_hash);
@@ -113,7 +112,6 @@ void E(char *in, char *out)
     out[3]=((in[3]&0x80)^((in[2]<<7)&0x80))^(((in[3]>>1)&0x7F)^((in[3])&0x7F));
 }
 
-
 void chopN(char *str, size_t n)
 {
     size_t len = strlen(str);
@@ -121,3 +119,6 @@ void chopN(char *str, size_t n)
         return;  // Or: n = len;
     memmove(str, str+n, len - n + 1);
 }
+
+
+
