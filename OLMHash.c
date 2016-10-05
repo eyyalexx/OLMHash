@@ -1,11 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+void pass_hash(char *in, char *out);
+void E(char *in, char *out);
+void chopN(char *str, size_t n);
 
 int main()
 {
     char user_ID [32];
     char user_pass [12];
+    char user_pass_hash [12];
     char *temp_ID;
     char *temp_pass;
     char line[256];
@@ -31,7 +37,6 @@ int main()
     //initial prompt
     printf("Enter your user ID:\n");
     scanf ("%s", user_ID);
-    printf ("You entered: %s\n", user_ID);
 
     //check ID length
     while (strlen(user_ID) <4 || strlen(user_ID) >32)
@@ -39,11 +44,10 @@ int main()
         printf("The user ID must be between 4 and 32 characters.\nPlease enter another ID:\n");
         scanf ("%s", user_ID);
     }
-
+    
     //get line from file
     while (fgets(line, sizeof(line), file))
     {
-        //printf("%s\n", line);
         strcpy(line_cpy,line);
 
         //get ID and passwod from line
@@ -56,39 +60,39 @@ int main()
             existing_user = 1;
 
             //get pass from user
-            printf("\nExisting user\n\n");
             printf("Enter your old password:\n");
             scanf ("%s", user_pass);
 
-
             //compute hash of user_pass
-            //NEEDS to be finished and txt needs to be updated
-            int i;
-            for(i = 0; user_pass[i]; i++)
-            {
-                user_pass[i] = toupper(user_pass[i]);
-            }
+            pass_hash(user_pass, user_pass_hash);
 
             //check incorrect password attempts
-            while (strcmp(user_pass, temp_pass) != 0 && attempts != max_attempts)
+            while (strcmp(user_pass_hash, temp_pass) != 0 && attempts != max_attempts)
             {
                 printf("Incorrect password. %i tries remaining.\nPlease try again:\n", max_attempts-attempts);
                 scanf ("%s", user_pass);
+                pass_hash(user_pass, user_pass_hash);
                 attempts++;
             }
 
+            if (attempts == 5)
+            {
+                fputs(line_cpy, temp);
+            }
+
             //if pass correct - ask for new pass
-            if (strcmp(user_pass, temp_pass) == 0)
+            if (strcmp(user_pass_hash, temp_pass) == 0)
             {
                 //get new password
                 printf("Password correct\n");
                 printf("Enter your new password:\n");
                 scanf ("%s", user_pass);
+                pass_hash(user_pass, user_pass_hash);
 
                 //create new line to add to file
                 strcpy(new_line, user_ID);
                 strcat(new_line, " ");
-                strcat(new_line, user_pass);
+                strcat(new_line, user_pass_hash);
                 strcat(new_line, "\n");
 
                 //add line to file
@@ -98,47 +102,23 @@ int main()
 
         if (strcmp(user_ID, temp_ID) != 0)
         {
-            //printf("%s\n", line_cpy);
             fputs(line_cpy, temp);
         }
-
     }
 
     if (existing_user == 0)
     {
-
-
-
         //user doesn't exist - add username and password
         printf("\nNot existing user\n\n");
         printf("Enter your new password:\n");
         scanf ("%s", user_pass);
+        pass_hash(user_pass, user_pass_hash);
 
         //create new line to add to file
         strcpy(new_line, user_ID);
         strcat(new_line, " ");
-        strcat(new_line, user_pass);
-
-
-
-        //padding
-        int j;
-        int buffer = 0;
-        buffer = 12 - strlen(user_pass);   
-   		
-        for(j = 0; j < buffer; j++)
-        {
-        	strcat(new_line, "0");
- 
-        }
-
+        strcat(new_line, user_pass_hash);
         strcat(new_line, "\n");
-
-        //hash
-        char token1[4];
-        char token2[4];
-        char token3[4];
-
 
         //add line to file
         fputs(new_line, temp);
@@ -161,6 +141,60 @@ int main()
     return 0;
 }
 
+//hash funbction
+void pass_hash(char *in, char *out)
+{
+
+    //adjust to upper case
+    int i;
+    for(i = 0; in[i]; i++)
+    {
+        in[i] = toupper(in[i]);
+    }
+
+    //adjust length - cut or add \0
+    if (strlen(in) > 12)
+    {
+        strncpy(out, in, 12);
+    }
+
+
+    if (strlen(in) < 12)
+    {
+        int j;
+        for (j = strlen(in); j < 12; j++)
+        {
+            in[j] = '@';
+        }
+    }
+
+    //encryption
+    char sub1[3];
+    char sub1_hash[32];
+    char sub2[3];
+    char sub2_hash[32];
+    char sub3[3];
+    char sub3_hash[32];
+
+    //split into three substrings
+    memcpy(sub1, in, 4);
+    chopN(in, 4);
+    memcpy(sub2, in, 4);
+    chopN(in, 4);
+    memcpy(sub3, in, 4);
+
+     //use E function
+    E(sub1, sub1_hash);
+    E(sub2, sub2_hash);
+    E(sub3, sub3_hash);
+
+    //concatenate strings
+    strcpy(out, sub1_hash);
+    strcat(out, sub2_hash);
+    strcat(out, sub3_hash);
+}
+
+
 /********************* E function *************************/
 // DES replacement cipher
 // The function E takes 4 bytes from *in as input and
@@ -171,5 +205,14 @@ void E(char *in, char *out)
     out[1]=((in[1]&0x80)^((in[0]<<7)&0x80))^(((in[1]>>1)&0x7F)^((in[1])&0x7F));
     out[2]=((in[2]&0x80)^((in[1]<<7)&0x80))^(((in[2]>>1)&0x7F)^((in[2])&0x7F));
     out[3]=((in[3]&0x80)^((in[2]<<7)&0x80))^(((in[3]>>1)&0x7F)^((in[3])&0x7F));
+}
+
+
+void chopN(char *str, size_t n)
+{
+    size_t len = strlen(str);
+    if (n > len)
+        return;  // Or: n = len;
+    memmove(str, str+n, len - n + 1);
 }
 
