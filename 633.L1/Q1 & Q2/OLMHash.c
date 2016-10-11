@@ -3,73 +3,78 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MIN_USER_LENGTH 4
+#define MAX_USER_LENGTH 32
+#define MAX_PASSWORD_LENGTH 12
+#define MAX_ATTEMPTS 5
+
 void pass_hash(char *in, char *out);
 void E(char *in, char *out);
-void chopN(char *str, size_t n);
+
+//void chopN(char *str, size_t n);
 
 int main()
 {
-    char user_ID [32];
-    char user_pass [12];
-    char user_pass_hash [12];
+    char user_ID [MAX_USER_LENGTH];
+    char user_pass [MAX_PASSWORD_LENGTH];
+    char user_pass_hash [MAX_PASSWORD_LENGTH];
     char *temp_ID;
     char *temp_pass;
     char line[256];
     char line_cpy[256];
     char new_line[256];
     int existing_user = 0;
-    const int max_attempts = 5;
     int attempts = 0;
 
-    //open files
+    //Open Files
     FILE *file;
     FILE *temp;
     file = fopen("OLMHash.txt", "a+");
     temp = fopen("temp.txt", "w+");
 
-    //error opening file
+    //Error Opening File
     if (file == NULL)
     {
         printf("Error opening file!\n");
         exit(1);
     }
 
-    //initial prompt
+    //Initial Prompt
     printf("Enter your user ID:\n");
     scanf ("%s", user_ID);
 
-    //check ID length
-    while (strlen(user_ID) < 4 || strlen(user_ID) > 32)
+    //Check User ID Length
+    while (strlen(user_ID) < MIN_USER_LENGTH || strlen(user_ID) > MAX_USER_LENGTH)
     {
         printf("The user ID must be between 4 and 32 characters.\nPlease enter another ID:\n");
         scanf ("%s", user_ID);
     }
     
-    //get line from file
+    //Get Line From OLMHash.txt File
     while (fgets(line, sizeof(line), file))
     {
         strcpy(line_cpy, line);
 
-        //get ID and passwod from line
+        //Get ID And Password From Line
         temp_ID = strtok(line, " ");
         temp_pass = strtok(NULL, "\n");
 
-        //user exists - ask for password and replace current
+        //User exists, ask for new password and replace current password. 
         if (strcmp(user_ID, temp_ID) == 0)
         {
             existing_user = 1;
 
-            //get pass from user
+            //Get Pass From User
             printf("Enter your old password:\n");
             scanf ("%s", user_pass);
 
-            //compute hash of user_pass
+            //Compute the hash for the inputted password.
             pass_hash(user_pass, user_pass_hash);
 
-            //check incorrect password attempts
-            while (strcmp(user_pass_hash, temp_pass) != 0 && attempts != max_attempts)
+            //Check Incorrect Password Attempts
+            while (strcmp(user_pass_hash, temp_pass) != 0 && attempts != MAX_ATTEMPTS)
             {
-                printf("Incorrect password. %i tries remaining.\nPlease try again:\n", max_attempts-attempts);
+                printf("Incorrect password. %i tries remaining.\nPlease try again:\n", MAX_ATTEMPTS - attempts);
                 scanf ("%s", user_pass);
                 pass_hash(user_pass, user_pass_hash);
                 attempts++;
@@ -80,22 +85,22 @@ int main()
                 fputs(line_cpy, temp);
             }
 
-            //if pass correct - ask for new pass
+            //If the password is correct, ask for a new password which replaces the old.
             if (strcmp(user_pass_hash, temp_pass) == 0)
             {
-                //get new password
+                //Get New Password
                 printf("Password correct\n");
                 printf("Enter your new password:\n");
                 scanf ("%s", user_pass);
                 pass_hash(user_pass, user_pass_hash);
 
-                //create new line to add to file
+                //Create New Line To Add To File
                 strcpy(new_line, user_ID);
                 strcat(new_line, " ");
                 strcat(new_line, user_pass_hash);
                 strcat(new_line, "\n");
 
-                //add line to file
+                //Add Line To File
                 fputs(new_line, temp);
             }
         }
@@ -108,75 +113,77 @@ int main()
 
     if (existing_user == 0)
     {
-        //user doesn't exist - add username and password
+        //If the User ID does not exist, add User ID and password (i.e. the password hash) to the OLMHash.txt file.
         printf("\nNot existing user\n\n");
         printf("Enter your new password:\n");
         scanf ("%s", user_pass);
         pass_hash(user_pass, user_pass_hash);
 
-        //create new line to add to file
+        //Create New Line To Add To File
         strcpy(new_line, user_ID);
         strcat(new_line, " ");
         strcat(new_line, user_pass_hash);
         strcat(new_line, "\n");
 
-        //add line to file
+        //Add Line To File
         fputs(new_line, temp);
     }
 
-    //displays lockout message to user
-    if (attempts == max_attempts)
+    //Displays Lockout Message To User
+    if (attempts == MAX_ATTEMPTS)
     {
-        printf("Too many unsuccessful attempts - your account is locked\n");
+        printf("Too many unsuccessful attempts - your account is locked.\n");
     }
 
-    //close files
+    //Close Files
     fclose(file);
     fclose(temp);
 
-    //delete original file and rename temp
+    //Delete original file and rename temp.
     remove("OLMHash.txt");
     rename("temp.txt", "OLMHash.txt" );
 
     return 0;
 }
 
-//hash function
+//Hash Function
 void pass_hash(char *in, char *out)
 {
 
-    //adjust to upper case
+    //Adjust To Upper Case
     int i;
     for(i = 0; in[i]; i++)
     {
         in[i] = toupper(in[i]);
     }
 
-    //adjust length - cut or add \0
-    if (strlen(in) > 12)
+    //Adjust Length. Has to be exactly 12 characters, so either cut or add to make 12 characters long.
+    if (strlen(in) > MAX_PASSWORD_LENGTH)
     {
-        strncpy(out, in, 12);
+        strncpy(out, in, MAX_PASSWORD_LENGTH);
     }
 
-
-    if (strlen(in) < 12)
+    if (strlen(in) < MAX_PASSWORD_LENGTH)
     {
         int j;
-        for (j = strlen(in); j < 12; j++)
+        for (j = strlen(in); j < MAX_PASSWORD_LENGTH; j++)
         {
             in[j] = '@';
         }
     }
 
-    char *hash = (char*)calloc(12+1, sizeof(char));
+    // Allocates a block of memory for an array of 12 char elements, each of them char bytes (i.e. 4) long, and initializes all its bits 
+    // to zero.
+    char *hash = (char*)calloc(MAX_PASSWORD_LENGTH + 1, sizeof(char));
 
+    //Loop through every 4 bytes (i.e. 4 chars) and perform the hashing function. It loops 3 times in order to cover the 3 blocks of 4
+    //letters, which will add up to 12 characters.
     int k;
     for (k = 0; k < 3; k++)
     {
-	E(&in[4*k], &hash[4*k]);
+	E(&in[4 * k], &hash[4 * k]);
     }
 
-    //concatenate strings
     strcpy(out, hash);
 }
 
@@ -192,12 +199,10 @@ void E(char *in, char *out)
     out[3]=((in[3]&0x80)^((in[2]<<7)&0x80))^(((in[3]>>1)&0x7F)^((in[3])&0x7F));
 }
 
-
-void chopN(char *str, size_t n)
-{
-    size_t len = strlen(str);
-    if (n > len)
-        return;  // Or: n = len;
-    memmove(str, str+n, len - n + 1);
-}
-
+//void chopN(char *str, size_t n)
+//{
+//    size_t len = strlen(str);
+//    if (n > len)
+//        return;  // Or: n = len;
+//    memmove(str, str+n, len - n + 1);
+//}

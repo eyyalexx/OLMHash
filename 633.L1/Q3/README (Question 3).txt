@@ -1,4 +1,5 @@
 1. Open Terminal
+
 2. Run the command (excluding the quotations): "gcc OPassword.c -o Q3". This will compile the .c file.
 
 3. In terminal, run the command (excluding the quotations): "./Q3". (This command should be used everytime the user wants to run the program.)

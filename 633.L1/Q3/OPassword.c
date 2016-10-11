@@ -4,13 +4,14 @@
 #include <math.h>
 
 #define NUM_COMBINATIONS 456976
+#define PASSWORD_LENGTH 4
 
 void generate();
 void E(char *in, char *out);
 char *hash_process(char *password);
 void searchHash(char *fname, char *hash);
 
-char key[5];
+char key[PASSWORD_LENGTH + 1];
 char *filename = "combinations.txt";
 
 int main() {
@@ -19,7 +20,7 @@ int main() {
 	generate();
 	printf("Done!\n");
 	printf("Enter hash key: ");
-	fgets (key, 5, stdin);
+	fgets (key, PASSWORD_LENGTH + 1, stdin);
 
 	searchHash(filename, key);
 }
@@ -29,7 +30,6 @@ void searchHash(char *fname, char *hash) {
 	char temp[512];
 	int line_num = 1;
 	int find_result = 0;
-	char *lineOut[12];
 
 	//open file
 	if ((fp = fopen(fname, "r")) == NULL) {
@@ -69,13 +69,13 @@ void generate() {
 
 	char* alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-	char * str = calloc(4 + 1, sizeof(char));
-	char * str2 = calloc(4 + 1, sizeof(char));
+	char * str = calloc(PASSWORD_LENGTH + 1, sizeof(char));
+	char * str2 = calloc(PASSWORD_LENGTH + 1, sizeof(char));
     
     	for (int i = 0; i < NUM_COMBINATIONS; i++) {
         	int j = i;
         	
-		for (int k = 0; k < 4; k++) {
+		for (int k = 0; k < PASSWORD_LENGTH; k++) {
 	        	str[k] = alpha[j % 26];
 	        	j = j / 26;
         	}
@@ -90,15 +90,16 @@ void generate() {
 
 char *hash_process(char *password)
 {
-	// Allocates a block of memory for an array of 13 char elements, each of them char bytes (i.e. 4) long, and initializes all its bits 
+	// Allocates a block of memory for an array of 4 char elements, each of them char bytes (i.e. 4) long, and initializes all its bits 
         // to zero.
-	char *hash = (char*)calloc(4 + 1, sizeof(char));
+	char *hash = (char*)calloc(PASSWORD_LENGTH + 1, sizeof(char));
 
-	//Loop through every 4 bytes (i.e. 4 chars) and perform the hashing function.
+	//Loop through every 4 bytes (i.e. 4 chars) and perform the hashing function. It loops 3 times in order to cover the 3 blocks of 4
+        //letters, which will add up to 12 characters.
         int i;
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 3; i++)
 	{
-		E(&password[4*i], &hash[4*i]);
+		E(&password[4 * i], &hash[4 * i]);
 	}
 
 	return hash;

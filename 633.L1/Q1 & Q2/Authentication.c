@@ -4,98 +4,91 @@
 #include <ctype.h>
 #include <time.h>
 
-char * generateRandXOR(char* hash, int r);
-void R(char* in, char* out, int r);
+#define MAX_USER_LENGTH 32
+#define MAX_PASSWORD_LENGTH 12
+
 void pass_hash(char *in, char *out);
 void E(char *in, char *out);
-void chopN(char *str, size_t n);
-
-const int MAX_PASSWORD_LENGTH = 12;
+char *generateRandXOR(char* hash, int r);
+void R(char* in, char* out, int r);
 
 int main()
 {
-    char user_ID [32];
-    char user_pass [12];
-    char user_pass_hash [12];
+    char user_ID [MAX_USER_LENGTH];
+    char user_pass [MAX_PASSWORD_LENGTH];
+    char user_pass_hash [MAX_PASSWORD_LENGTH];
     char *temp_ID;
     char *temp_pass;
     char line[256];
     int existing_user = 0;
     int random_number;
-    const int MAX_PASSWORD_LENGTH = 12;
     char* user_xor;
     char* temp_xor;
 
-
-
-    //open files
+    //Open Files
     FILE *file;
     file = fopen("OLMHash.txt", "r");
 
-    //error opening file
+    //Error Opening File
     if (file == NULL)
     {
         printf("Error opening file!\n");
         exit(1);
     }
 
-    //initial prompt
+    //Initial Prompt
     printf("Enter your user ID:\n");
     scanf ("%s", user_ID);
 
     printf("Enter your password:\n");
     scanf ("%s", user_pass);
 
-      //generate a random 32 bit number that comes from server
-    srand(time(NULL)); // randomize seed
+    //Generate a random number that comes from server
+    srand(time(NULL)); // Randomize Seed
 
     random_number = rand();
-    printf("%i\n", random_number);
+    //printf("%i\n", random_number);
 
-
-    //hash password
+    //Hash Input Password
     pass_hash(user_pass, user_pass_hash);
-    printf ("%s\n", user_pass_hash);
+    //printf ("%s\n", user_pass_hash);
 
-    //put through XOR function with rand number
-    user_xor = generateRandXOR(user_pass, random_number);
+    //Put hashed password and the random number through XOR function.
+    //The "user_xor" will be sent to the server for comparison.
+    user_xor = generateRandXOR(user_pass_hash, random_number);
     //printf("%s\n", user_xor);
 
-    //send password to server
 
-    //server side
-    //get line from file
+    //Server Side Process:
+
+    //Get Line From OLMHash.txt File
     while (fgets(line, sizeof(line), file))
     {
 
-        //get ID and passwod from line
-        temp_ID = strtok (line," ");
-        temp_pass = strtok (NULL,"\n");
-
+        //Get ID And Password From Line
+        temp_ID = strtok (line, " ");
+        temp_pass = strtok (NULL, "\n");
         //printf ("%s\n%s\n", temp_ID, temp_pass);
 
-        //user exists - ask for password and replace current
+        //If user exists, use exiting hash with random number to calculate "temp_xor".
         if (strcmp(user_ID, temp_ID) == 0)
         {
-
             existing_user = 1;
-            //put hash through XOR function with 32 bit rand number
+
+            //Put exiting hashed password (in the OLMHash.txt) and the random number through XOR function.
             temp_xor = generateRandXOR(temp_pass, random_number);
-            printf("%s\n", user_xor);
-            printf("%s\n", temp_xor);
-
-
+            //printf("%s\n", user_xor);
+            //printf("%s\n", temp_xor);
             //printf ("%s\n",  user_pass_hash);
             //printf ("%s\n", temp_pass);
 
-                      //if pass correct - Access Granted
+            //If results match, print "Access Granted".
             if (strcmp(user_xor, temp_xor) == 0)
             {
-                //get new password
                 printf("Access Granted\n");
             }
 
-            //if pass incorrect - Access Denied
+            //If results do not match, print "Access Denied".
             if (strcmp(user_xor, temp_xor) != 0)
             {
                 printf("Access Denied\n");
@@ -103,71 +96,59 @@ int main()
         }
     }
 
-    //not existing user - print user not found
+    //If user does not exist, print "User ID Not Found".
     if (existing_user == 0)
     {
-        //user doesn't exist
-        printf("User ID not found\n");
+        //User Doesn't Exist
+        printf("User ID Not Found\n");
     }
 
-    //close files
+    //Close Files
     fclose(file);
 
     return 0;
 }
 
-//hash funbction
+//Hash Function
 void pass_hash(char *in, char *out)
 {
 
-    //adjust to upper case
+    //Adjust To Upper Case
     int i;
     for(i = 0; in[i]; i++)
     {
         in[i] = toupper(in[i]);
     }
 
-    //adjust length - cut or add \0
-    if (strlen(in) > 12)
+    //Adjust Length. Has to be exactly 12 characters, so either cut or add to make 12 characters long.
+    if (strlen(in) > MAX_PASSWORD_LENGTH)
     {
-        strncpy(out, in, 12);
+        strncpy(out, in, MAX_PASSWORD_LENGTH);
     }
 
-      if (strlen(in) < 12)
+    if (strlen(in) < MAX_PASSWORD_LENGTH)
     {
         int j;
-        for (j = strlen(in); j < 12; j++)
+        for (j = strlen(in); j < MAX_PASSWORD_LENGTH; j++)
         {
             in[j] = '@';
         }
     }
 
-    //encryption
-    char sub1[3];
-    char sub1_hash[32];
-    char sub2[3];
-    char sub2_hash[32];
-    char sub3[3];
-    char sub3_hash[32];
+    // Allocates a block of memory for an array of 12 char elements, each of them char bytes (i.e. 4) long, and initializes all its bits 
+    // to zero.
+    char *hash = (char*)calloc(MAX_PASSWORD_LENGTH + 1, sizeof(char));
 
-    //split into three substrings
-    memcpy(sub1, in, 4);
-    chopN(in, 4);
-    memcpy(sub2, in, 4);
-    chopN(in, 4);
-    memcpy(sub3, in, 4);
+    //Loop through every 4 bytes (i.e. 4 chars) and perform the hashing function. It loops 3 times in order to cover the 3 blocks of 4
+    //letters, which will add up to 12 characters.
+    int k;
+    for (k = 0; k < 3; k++)
+    {
+	E(&in[4 * k], &hash[4 * k]);
+    }
 
-     //use E function
-    E(sub1, sub1_hash);
-    E(sub2, sub2_hash);
-    E(sub3, sub3_hash);
-
-    //concatenate strings
-    strcpy(out, sub1_hash);
-    strcat(out, sub2_hash);
-    strcat(out, sub3_hash);
+    strcpy(out, hash);
 }
-
 
 /********************* E function *************************/
 // DES replacement cipher
@@ -181,24 +162,16 @@ void E(char *in, char *out)
     out[3]=((in[3]&0x80)^((in[2]<<7)&0x80))^(((in[3]>>1)&0x7F)^((in[3])&0x7F));
 }
 
-
-void chopN(char *str, size_t n)
-{
-    size_t len = strlen(str);
-    if (n > len)
-        return;  // Or: n = len;
-    memmove(str, str+n, len - n + 1);
-}
-
 //xor the hash with the server's random number
-char * generateRandXOR(char* hash, int r)
+char *generateRandXOR(char* hash, int r)
 {
-        char * out = (char*)calloc(MAX_PASSWORD_LENGTH, sizeof(char));
+        char * out = (char*)calloc(MAX_PASSWORD_LENGTH + 1, sizeof(char));
         R(hash, out, r);
         R(&hash[4], &out[4], r);
         R(&hash[8], &out[8], r);
         return out;
 }
+
 //xor function for each bundle (4 bytes)
 void R(char* in, char* out, int r)
 {
