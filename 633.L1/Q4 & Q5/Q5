@@ -1,0 +1,19 @@
+CPS633 Lab 1
+Question 5 Word Problems
+
+Supposed ‘hashed’ passwords are salted using 4-bit salt values. Discuss the effect of using these salts in terms of computational and storage requirement of the password cracker described in section 3. 
+
+1.
+
+
+Passwords in this lab are allowed to be up to 12 character long. What happens if someone picks a null password, i.e. a password containing zero characters? Most people select passwords that are 8 characters or less. What is the impact of this on the security of the system? 
+
+2.
+
+
+Suppose the encryption algorithm, E, used to produce password hashes is weak. For example, the output of the encryption algorithm used in this lab is simply a linear combination of the input bits. How can an attacker use this knowledge to attack the system? What are some of the property of a good cryptographic hash function that can be used to address this weakness? 
+
+3.
+
+
+4. A typical time period for X number of attempts could be 1 minute, but the best way to utilize a time based lockout system would be to have the lockout time increase after every unsuccessful attempt. Having a fixed lockout time would only change the number of unsuccessful attempts you could make every X period of time, where has having the lockout time increase could lock an attacker out for an impractical amount of time
